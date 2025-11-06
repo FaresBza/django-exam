@@ -126,20 +126,19 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         # Filtre ?min_rating=
         min_rating = self.request.query_params.get("min_rating")
-            if min_rating:
-                try:
-                    qs = qs.filter(avg_rating__gte=float(min_rating))
-                except ValueError:
-                    pass
-            return qs
+        if min_rating:
+            try:
+                qs = qs.filter(avg_rating__gte=float(min_rating))
+            except ValueError:
+                pass
+        return qs
 
         @decorators.action(detail=True, methods=["get"], url_path="rating")
         def rating(self, request, pk=None):
             product = self.get_object()
             data = {
                 "product_id": product.id,
-                "avg_rating": getattr(product, "avg_rating", None) or
-                product.reviews.aggregate(avg=Avg("rating"))["avg"] or 0.0,
+                "avg_rating": getattr(product, "avg_rating", None) or product.reviews.aggregate(avg=Avg("rating"))["avg"] or 0.0,
                 "count": product.reviews.count(),
             }
             return response.Response(data)
