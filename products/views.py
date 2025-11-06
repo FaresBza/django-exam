@@ -14,8 +14,9 @@ from drf_spectacular.utils import (
     OpenApiResponse,
 )
 
-from .models import Product
-from .serializers import ProductSerializer
+from .models import Product, Review
+from .serializers import ProductSerializer, ReviewSerializer
+from .permissions import IsOwnerOrReadOnly
 
 
 @extend_schema_view(
@@ -150,3 +151,11 @@ class ProductViewSet(viewsets.ModelViewSet):
             from .serializers import ReviewSerializer
             ser = ReviewSerializer(qs, many=True)
             return response.Response(ser.data)
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.select_related("product", "user").all()
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
