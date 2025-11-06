@@ -17,6 +17,7 @@ from drf_spectacular.utils import (
 from .models import Product, Review
 from .serializers import ProductSerializer, ReviewSerializer
 from .permissions import IsOwnerOrReadOnly
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 
 @extend_schema_view(
@@ -47,6 +48,13 @@ from .permissions import IsOwnerOrReadOnly
                 description="Filtrer par prix (égalité exacte)",
                 required=False,
                 type=str,
+                location=OpenApiParameter.QUERY,
+            ),
+                OpenApiParameter(
+                name="min_rating",
+                description="Filtrer par note moyenne minimale",
+                required=False,
+                type=float,
                 location=OpenApiParameter.QUERY,
             ),
         ],
