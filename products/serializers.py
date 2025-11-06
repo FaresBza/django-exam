@@ -19,8 +19,7 @@ class ProductSerializer(serializers.ModelSerializer):
         return value
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user = serializers.StringRelatedField(read_only=True) # affiche le
-    username
+    user = serializers.StringRelatedField(read_only=True) # affiche le username
     class Meta:
         model = Review
         fields = "__all__"
