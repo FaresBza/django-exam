@@ -116,3 +116,38 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ["created_at", "price", "name"]
     ordering = ["-created_at"]
     filterset_fields = ["name", "price"]
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        qs = qs.annotate(
+            avg_rating=Coalesce(Avg("reviews__rating"), 0.0,
+            output_field=FloatField()),
+            reviews_count=Count("reviews"))
+
+        # Filtre ?min_rating=
+        min_rating = self.request.query_params.get("min_rating")
+            if min_rating:
+                try:
+                    qs = qs.filter(avg_rating__gte=float(min_rating))
+                except ValueError:
+                    pass
+            return qs
+
+        @decorators.action(detail=True, methods=["get"], url_path="rating")
+        def rating(self, request, pk=None):
+            product = self.get_object()
+            data = {
+                "product_id": product.id,
+                "avg_rating": getattr(product, "avg_rating", None) or
+                product.reviews.aggregate(avg=Avg("rating"))["avg"] or 0.0,
+                "count": product.reviews.count(),
+            }
+            return response.Response(data)
+        @decorators.action(detail=True, methods=["get"], url_path="reviews")
+        def product_reviews(self, request, pk=None):
+            product = self.get_object()
+            qs = product.reviews.all().order_by("-created_at")
+
+            from .serializers import ReviewSerializer
+            ser = ReviewSerializer(qs, many=True)
+            return response.Response(ser.data)
