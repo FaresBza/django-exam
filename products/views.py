@@ -131,8 +131,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         qs = qs.annotate(
-            avg_rating=Coalesce(Avg("reviews__rating"), 0.0,
-                                output_field=FloatField()),
+            avg_rating=Coalesce(Avg("reviews__rating"), 0.0, output_field=FloatField()),
             reviews_count=Count("reviews"))
 
         # Filtre ?min_rating=
