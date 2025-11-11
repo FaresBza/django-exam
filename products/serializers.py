@@ -1,24 +1,34 @@
 from rest_framework import serializers
 from .models import Product, Review
+from django.db.models import Avg
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    avg_rating = serializers.SerializerMethodField()
+    reviews_count = serializers.SerializerMethodField()
+
     """
-    Représentation d'un produit vendable.
-    - name: nom commercial
-    - price: prix TTC en euros (doit être > 0)
-    - created_at: horodatage de création (lecture seule)
-    """
+        Représentation d'un produit vendable.
+        - name: nom commercial
+        - price: prix TTC en euros (doit être > 0)
+        - created_at: horodatage de création (lecture seule)
+        """
 
     class Meta:
         model = Product
-        fields = "__all__"
-        read_only_fields = ("created_at",)
+        fields = ("id", "name", "price", "created_at", "avg_rating", "reviews_count")
+        read_only_fields = ("created_at", "avg_rating", "reviews_count")
 
-    def validate_price(self, value):
-        if value <= 0:
-            raise serializers.ValidationError("Le prix doit être > 0")
-        return value
+    def get_avg_rating(self, obj):
+        if hasattr(obj, "avg_rating") and obj.avg_rating is not None:
+            return round(float(obj.avg_rating), 2)
+        agg = obj.reviews.aggregate(avg=Avg("rating"))["avg"]
+        return round(float(agg) if agg is not None else 0.0, 2)
+
+    def get_reviews_count(self, obj):
+        if hasattr(obj, "reviews_count") and obj.reviews_count is not None:
+            return obj.reviews_count
+        return obj.reviews.count()
 
 
 class ReviewSerializer(serializers.ModelSerializer):
