@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Product(models.Model):
@@ -14,7 +15,7 @@ class Product(models.Model):
 class Review(models.Model):
     product = models.ForeignKey('products.Product', on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='reviews')
-    rating = models.PositiveSmallIntegerField()
+    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
     comment = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
