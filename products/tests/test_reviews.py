@@ -4,6 +4,8 @@ from rest_framework import status
 from products.models import Product, Review
 
 User = get_user_model()
+
+
 class ReviewTests(APITestCase):
     def setUp(self):
         self.user = User.objects.create_user(username="alice", password="pw")
@@ -11,7 +13,8 @@ class ReviewTests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
     def test_create_review_once(self):
-        res1 = self.client.post("/api/reviews/", {"product": self.product.id, "rating": 5, "comment": "Top"}, format="json")
+        res1 = self.client.post("/api/reviews/", {"product": self.product.id, "rating": 5, "comment": "Top"},
+                                format="json")
         self.assertEqual(res1.status_code, status.HTTP_201_CREATED, res1.content)
 
         res2 = self.client.post("/api/reviews/", {"product": self.product.id, "rating": 4}, format="json")

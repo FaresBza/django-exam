@@ -6,4 +6,4 @@ router = DefaultRouter()
 router.register(r"products", ProductViewSet, basename="product")
 router.register(r"reviews", ReviewViewSet, basename="review")
 
-urlpatterns = [ path("", include(router.urls)), ]
+urlpatterns = [path("", include(router.urls)), ]

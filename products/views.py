@@ -1,4 +1,4 @@
-from rest_framework import viewsets, permissions, filters
+from rest_framework import viewsets, permissions, filters, response, decorators, status
 from rest_framework.parsers import JSONParser
 from rest_framework.renderers import JSONRenderer
 from rest_framework_xml.parsers import XMLParser
@@ -17,7 +17,9 @@ from drf_spectacular.utils import (
 from .models import Product, Review
 from .serializers import ProductSerializer, ReviewSerializer
 from .permissions import IsOwnerOrReadOnly
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+
+from django.db.models import Avg, Count, FloatField
+from django.db.models.functions import Coalesce
 
 
 @extend_schema_view(
@@ -50,7 +52,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
                 type=str,
                 location=OpenApiParameter.QUERY,
             ),
-                OpenApiParameter(
+            OpenApiParameter(
                 name="min_rating",
                 description="Filtrer par note moyenne minimale",
                 required=False,
@@ -130,7 +132,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         qs = super().get_queryset()
         qs = qs.annotate(
             avg_rating=Coalesce(Avg("reviews__rating"), 0.0,
-            output_field=FloatField()),
+                                output_field=FloatField()),
             reviews_count=Count("reviews"))
 
         # Filtre ?min_rating=
@@ -147,10 +149,12 @@ class ProductViewSet(viewsets.ModelViewSet):
             product = self.get_object()
             data = {
                 "product_id": product.id,
-                "avg_rating": getattr(product, "avg_rating", None) or product.reviews.aggregate(avg=Avg("rating"))["avg"] or 0.0,
+                "avg_rating": getattr(product, "avg_rating", None) or product.reviews.aggregate(avg=Avg("rating"))[
+                    "avg"] or 0.0,
                 "count": product.reviews.count(),
             }
             return response.Response(data)
+
         @decorators.action(detail=True, methods=["get"], url_path="reviews")
         def product_reviews(self, request, pk=None):
             product = self.get_object()
@@ -159,6 +163,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             from .serializers import ReviewSerializer
             ser = ReviewSerializer(qs, many=True)
             return response.Response(ser.data)
+
 
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related("product", "user").all()
